@@ -1,0 +1,144 @@
+{
+  "season": 2026,
+  "target_week": 1,
+  "scoring_format": "half_ppr",
+  "weekly": {
+    "verified": true,
+    "current_week": 1,
+    "fetched_at": "2026-09-10T18:05:23.002699Z",
+    "source_urls": [
+      "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard",
+      "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries"
+    ],
+    "warnings": []
+  },
+  "source": "nflverse",
+  "source_url": "https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv",
+  "fetched_at": "2026-09-10T18:05:15.544901Z",
+  "available_through_week": null,
+  "players": [
+    {
+      "availability": "available",
+      "eligible": true,
+      "availability_updated_at": "2026-09-08T17:50:00Z",
+      "depth_rank": 1,
+      "baseline_projected_points": 2.3,
+      "projected_carries": 15.74,
+      "projected_targets": 2.71,
+      "projected_passing_attempts": 0.0,
+      "added_carries": 9.74,
+      "added_targets": 1.71,
+      "added_passing_attempts": 0.0,
+      "workload_notes": [
+        "Josh Jacobs exempt: +9.7 carries, +1.7 targets, allocated by available RB depth order."
+      ],
+      "player": {
+        "player_id": "00-0039811",
+        "name": "MarShawn Lloyd",
+        "team": "GB",
+        "position": "RB",
+        "recent_points": [
+          2.3
+        ],
+        "season_average": 2.3,
+        "matchup_multiplier": 1.0,
+        "injury_risk": 0.0,
+        "workload_std_dev": 2.5954,
+        "workload_points_adjustment": 7.4154,
+        "boom_rate": null
+      },
+      "team": "GB",
+      "projected_points": 9.71,
+      "history_season": 2024,
+      "games_played": 1,
+      "last_played_week": 2
+    },
+    {
+      "availability": "available",
+      "eligible": true,
+      "availability_updated_at": "2026-09-03T14:22:00Z",
+      "depth_rank": 2,
+      "baseline_projected_points": 2.2,
+      "projected_carries": 5.59,
+      "projected_targets": 1.43,
+      "projected_passing_attempts": 0.0,
+      "added_carries": 2.44,
+      "added_targets": 0.43,
+      "added_passing_attempts": 0.0,
+      "workload_notes": [
+        "Josh Jacobs exempt: +2.4 carries, +0.4 targets, allocated by available RB depth order."
+      ],
+      "player": {
+        "player_id": "00-0038685",
+        "name": "Chris Brooks",
+        "team": "GB",
+        "position": "RB",
+        "recent_points": [
+          0.8,
+          3.1,
+          1.9,
+          1.1,
+          2.1,
+          0.4,
+          1.6,
+          6.1
+        ],
+        "season_average": 1.5412,
+        "matchup_multiplier": 1.0,
+        "injury_risk": 0.0,
+        "workload_std_dev": 0.603,
+        "workload_points_adjustment": 1.7228,
+        "boom_rate": null
+      },
+      "team": "GB",
+      "projected_points": 3.92,
+      "history_season": 2025,
+      "games_played": 17,
+      "last_played_week": 18
+    },
+    {
+      "availability": "exempt",
+      "eligible": false,
+      "availability_updated_at": "2026-09-10T16:12:00Z",
+      "depth_rank": 4,
+      "baseline_projected_points": 12.1,
+      "projected_carries": 0.0,
+      "projected_targets": 0.0,
+      "projected_passing_attempts": 0.0,
+      "added_carries": 0.0,
+      "added_targets": 0.0,
+      "added_passing_attempts": 0.0,
+      "workload_notes": [
+        "Exempt: excluded from this week\u2019s recommended starters."
+      ],
+      "player": {
+        "player_id": "00-0035700",
+        "name": "Josh Jacobs",
+        "team": "GB",
+        "position": "RB",
+        "recent_points": [
+          18.0,
+          17.2,
+          4.0,
+          9.6,
+          16.2,
+          22.2,
+          3.8,
+          0.8
+        ],
+        "season_average": 14.6067,
+        "matchup_multiplier": 1.0,
+        "injury_risk": 0.0,
+        "workload_std_dev": 0.0,
+        "workload_points_adjustment": 0.0,
+        "boom_rate": null
+      },
+      "team": "GB",
+      "projected_points": 0.0,
+      "history_season": 2025,
+      "games_played": 15,
+      "last_played_week": 17
+    }
+  ],
+  "warnings": []
+}

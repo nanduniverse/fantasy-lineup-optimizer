@@ -1,0 +1,24 @@
+player_id,player_display_name,position,season,week,season_type,team,passing_yards,passing_tds,passing_interceptions,rushing_yards,rushing_tds,receptions,receiving_yards,receiving_tds,sack_fumbles_lost,rushing_fumbles_lost,receiving_fumbles_lost,passing_2pt_conversions,rushing_2pt_conversions,receiving_2pt_conversions,attempts,carries,targets
+00-0023459,Aaron Rodgers,QB,2025,1,REG,PIT,244,4,0,-1,0,0,0,0,0,0,0,0,0,0,30,1,0
+00-0023853,Matt Prater,K,2025,1,REG,BUF,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+00-0026190,Calais Campbell,DE,2025,1,REG,ARI,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+00-0030035,Adam Thielen,WR,2025,1,REG,MIN,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1
+00-0030061,Zach Ertz,TE,2025,1,REG,WAS,0,0,0,0,0,3,26,1,0,0,0,0,0,0,0,0,5
+00-0032764,Derrick Henry,RB,2025,1,REG,BAL,0,0,0,169,2,1,13,0,0,1,0,0,0,0,0,18,1
+00-0023459,Aaron Rodgers,QB,2025,2,REG,PIT,203,1,2,3,0,0,0,0,0,0,0,1,0,0,33,1,0
+00-0023853,Matt Prater,K,2025,2,REG,BUF,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+00-0026190,Calais Campbell,DE,2025,2,REG,ARI,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+00-0030035,Adam Thielen,WR,2025,2,REG,MIN,0,0,0,0,0,2,26,0,0,0,0,0,0,0,0,0,3
+00-0030061,Zach Ertz,TE,2025,2,REG,WAS,0,0,0,0,0,6,64,1,0,0,0,0,0,0,0,0,8
+00-0032764,Derrick Henry,RB,2025,2,REG,BAL,0,0,0,23,0,0,0,0,0,0,0,0,0,0,0,11,0
+00-0023459,Aaron Rodgers,QB,2025,3,REG,PIT,139,2,1,1,0,0,0,0,0,0,0,0,0,0,23,4,0
+00-0023853,Matt Prater,K,2025,3,REG,BUF,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+00-0026190,Calais Campbell,DE,2025,3,REG,ARI,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+00-0030035,Adam Thielen,WR,2025,3,REG,MIN,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2
+00-0030061,Zach Ertz,TE,2025,3,REG,WAS,0,0,0,0,0,3,38,0,0,0,0,0,0,0,0,0,3
+00-0032764,Derrick Henry,RB,2025,3,REG,BAL,0,0,0,50,1,1,7,0,0,1,0,0,0,0,1,12,1
+00-0023459,Aaron Rodgers,QB,2025,18,REG,PIT,294,1,0,20,0,0,0,0,0,0,0,0,0,0,47,1,0
+00-0023853,Matt Prater,K,2025,18,REG,BUF,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+00-0026190,Calais Campbell,DE,2025,18,REG,ARI,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+00-0030035,Adam Thielen,WR,2025,18,REG,PIT,0,0,0,0,0,3,43,0,0,0,0,0,0,0,0,0,6
+00-0032764,Derrick Henry,RB,2025,18,REG,BAL,0,0,0,126,0,0,0,0,0,0,0,0,0,0,0,20,1
