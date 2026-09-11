@@ -23,3 +23,6 @@ dist/
 # Browser test output
 test-results/
 playwright-report/
+
+# Vercel local project metadata
+.vercel/

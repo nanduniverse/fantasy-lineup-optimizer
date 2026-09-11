@@ -162,3 +162,16 @@ Current limits: 2026, single-week head-to-head matchups, supported QB/RB/WR/TE/F
 This imports rosters, slots, and reception weighting, **not custom scoring rules**. League-specific bonuses, touchdown/yardage rules, and K/DST scoring may differ from this app; the import panel explicitly calls this out. Opponent starters are whatever ESPN currently has submitted, not a prediction of future lineup changes. No writes are made to the ESPN league.
 
 League import is tested with controlled provider and browser fixtures; an actual user's private league has not been verified in this workspace.
+
+## Deploy to Vercel
+
+Deploy from the **repository root**, not `frontend/`. `vercel.json` builds the Vite frontend and routes `/api/*` to the FastAPI function in `api/index.py`. Production browser requests use same-origin `/api`; local development continues to use port 8000. Leave `VITE_API_BASE_URL` unset in Vercel unless intentionally hosting the API separately.
+
+The root `requirements.txt` contains runtime dependencies, and `.python-version` selects Python 3.13. Development environments, secrets, and generated files are excluded from uploads. The function allows up to 300 seconds for cold data downloads and simulations; process caches are temporary and reset on cold starts. This setup uses Vercel's [Python functions](https://vercel.com/docs/functions/runtimes/python/api-directory).
+
+```bash
+npx vercel login
+npx vercel --prod
+```
+
+After deploying, check the homepage, `/api/health`, player loading, and a recommendation. League authentication values must never be added to Vercel environment variables or committed to Git; they remain request-scoped.

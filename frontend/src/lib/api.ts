@@ -1,6 +1,6 @@
 import type { NflCatalog, NflContext, NflRecommendationRequest, NflRecommendationResponse, RecommendationResponse } from "../types";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api";
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.PROD ? "/api" : "http://localhost:8000/api");
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
