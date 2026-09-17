@@ -90,3 +90,12 @@ def test_import_endpoint_applies_league_context(monkeypatch):
 def test_wrong_scoring_week_rejected():
     data=fixture();data['scoringPeriodId']=2
     with pytest.raises(ValueError):parse_league(data,LeagueRequest(league_id='123',week=1))
+
+
+def test_private_import_responses_are_not_cacheable():
+    from fastapi.testclient import TestClient
+    from app.main import app
+    response = TestClient(app).post('/api/leagues/espn/import', json={})
+    assert response.status_code == 422
+    assert response.headers['cache-control'] == 'no-store'
+    assert response.headers['pragma'] == 'no-cache'

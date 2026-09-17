@@ -26,13 +26,14 @@ export function LeagueImporter({ week, disabled, onApply, onPending }: {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [refresh, setRefresh] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
   const discovery = useRef<AbortController | null>(null);
   useEffect(() => () => discovery.current?.abort(), []);
 
   async function connect() {
     setError('');
     let id: string;
-    try { id = leagueId(input); } catch (e) { setError((e as Error).message); return; }
+    try { id = leagueId(input); } catch (e) { setError((e as Error).message); inputRef.current?.focus(); return; }
     discovery.current?.abort();
     const controller = new AbortController(); discovery.current = controller;
     setLoading(true);
@@ -64,10 +65,11 @@ export function LeagueImporter({ week, disabled, onApply, onPending }: {
 
   return <details className="league-import"><summary>Import an ESPN league <span>Load your roster and weekly opponent</span></summary>
     {!connection ? <form onSubmit={e => { e.preventDefault(); void connect(); }}>
-      <label>League link or ID<input aria-label="ESPN league link or ID" value={input} onChange={e => setInput(e.target.value)} placeholder="Paste your ESPN league link" disabled={loading || disabled} /></label>
+      <p id="league-import-notice">Find my league authorizes this site to send the league ID and any credentials you enter to ESPN through our server to read your league. Only import a league you have permission to access. <a href="/privacy">How your data is handled</a>.</p>
+      <label>League link or ID<input ref={inputRef} required maxLength={500} aria-describedby={error ? "league-import-notice league-import-error" : "league-import-notice"} aria-invalid={!!error} aria-label="ESPN league link or ID" value={input} onChange={e => setInput(e.target.value)} placeholder="Paste your ESPN league link" disabled={loading || disabled} /></label>
       <details className="private-league"><summary>Private league?</summary><p>ESPN private leagues need your ESPN session cookies. In your browser’s developer tools, open Application/Storage → Cookies → ESPN and copy espn_s2 and SWID. These grant account access: only enter them in a deployment you trust. They stay in memory for this connection and are cleared when you disconnect or reload.</p>
-        <label>espn_s2<input aria-label="ESPN session cookie" type="password" autoComplete="off" value={s2} onChange={e => setS2(e.target.value)} /></label>
-        <label>SWID<input aria-label="ESPN SWID" type="password" autoComplete="off" value={swid} onChange={e => setSwid(e.target.value)} /></label>
+        <label>espn_s2<input aria-label="ESPN session cookie" type="password" autoComplete="off" spellCheck={false} autoCapitalize="none" value={s2} onChange={e => setS2(e.target.value)} /></label>
+        <label>SWID<input aria-label="ESPN SWID" type="password" autoComplete="off" spellCheck={false} autoCapitalize="none" value={swid} onChange={e => setSwid(e.target.value)} /></label>
       </details>
       <button className="primary" disabled={loading || disabled || !input.trim()}>{loading ? 'Finding league…' : 'Find my league'}</button>
     </form> : <div>
@@ -78,6 +80,6 @@ export function LeagueImporter({ week, disabled, onApply, onPending }: {
       {loading && <p role="status">Loading week {week} roster and opponent…</p>}
       {!loading && !error && league?.selected_team && league.week === week && <div className="import-result"><strong>{league.selected_team.name} vs {league.opponent?.name ?? 'No scheduled opponent'} · Week {week}</strong><p>Imported {league.your_player_ids.length} roster players and {league.opponent_player_ids.length} opponent starters. You can still edit both sides below.</p>{league.warnings.map(w => <p key={w}>{w}</p>)}</div>}
     </div>}
-    {error && <p className="error" role="alert">{error}</p>}
+    {error && <p id="league-import-error" className="error" role="alert">{error}</p>}
   </details>;
 }

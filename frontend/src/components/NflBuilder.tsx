@@ -11,13 +11,8 @@ const MAX_RULES: RosterRules = { qb: 2, rb: 4, wr: 4, te: 2, flex: 3, k: 2, dst:
 const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 function Avatar({ entry }: { entry: NflPlayer }) {
-  const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const url = entry.image_url;
   const initials = entry.player.name.split(/\s+/).map(part => part[0]).slice(0, 2).join("");
-  return <span className={`avatar player-photo ${entry.player.position === "DST" ? "team-logo" : ""}`} aria-hidden="true">
-    {url && failedUrl !== url ? <img src={url} alt="" loading="lazy" decoding="async" onError={() => setFailedUrl(url)} />
-      : <span className="avatar-fallback">{entry.player.position === "DST" ? entry.team : initials}</span>}
-  </span>;
+  return <span className="avatar player-photo" aria-hidden="true"><span className="avatar-fallback">{entry.player.position === "DST" ? entry.team : initials}</span></span>;
 }
 
 function RookieInfo({ entry }: { entry: NflPlayer }) {
@@ -111,7 +106,10 @@ export function NflBuilder() {
   const selectCurrentWeek = useRef(!saved?.yourIds?.length && !saved?.opponentIds?.length);
   const resultsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    save('matchup', { scoring, week, yourIds, opponentIds, rules });
+    const persist = () => save('matchup', { scoring, week, yourIds, opponentIds, rules });
+    persist();
+    window.addEventListener('fantasy-storage-change', persist);
+    return () => window.removeEventListener('fantasy-storage-change', persist);
   }, [scoring, week, yourIds, opponentIds, rules]);
   useEffect(() => {
     const refresh = () => setRetry(n => n + 1);
@@ -182,7 +180,7 @@ export function NflBuilder() {
       const next = await recommendNflLineup({ season: 2026, target_week: week, scoring_format: scoring,
         your_player_ids: yourIds, opponent_player_ids: opponentIds, rules, simulations: 10000, seed: 42 });
       setResult(next);
-      requestAnimationFrame(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+      requestAnimationFrame(() => resultsRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }));
     } catch (err) { setError(err instanceof Error ? err.message : "Could not optimize your lineup"); }
     finally { setOptimizing(false); }
   }
@@ -211,7 +209,7 @@ export function NflBuilder() {
     </div>
     <div className="optimize-bar"><div><strong>Starting lineup</strong><p>{issue ?? "Both rosters are ready to simulate."}</p></div><button className="primary" disabled={busy || !catalog || !!issue} onClick={optimize}>{optimizing ? "Optimizing…" : "Optimize lineup"}<span>→</span></button></div>
     <p className="baseline-note">Offensive veterans use recorded performance. Rookies without history use ESPN with a limited draft adjustment. Kickers and D/ST use ESPN weekly forecasts.</p>
-    {result && <div className="results" ref={resultsRef} aria-live="polite"><div className="result-intro"><p className="eyebrow">MATCHUP RESULTS</p><h2>Recommended starters</h2><p>Week {week} · {FORMATS[scoring]} · Opponent projected {result.opponent_expected_points.toFixed(1)} points</p></div><LineupCard lineup={result.recommended} title="Your best starting lineup" />
+    {result && <div className="results" ref={resultsRef} aria-live="polite"><div className="result-intro"><p className="eyebrow">MATCHUP RESULTS</p><h2>Recommended starters</h2><p>Week {week} · {FORMATS[scoring]} · Opponent projected {result.opponent_expected_points.toFixed(1)} points</p></div><LineupCard lineup={result.recommended} title="Highest modeled win probability" />
       {result.recommended.starters.some(p => p.position === "QB" && p.team && result.recommended.starters.some(r => r.team === p.team && ["WR", "TE"].includes(r.position))) && <p className="stack-explanation">⌁ This lineup includes a QB–receiver stack. Their shared passing outcomes are included in the estimated win probability, with no artificial points bonus.</p>}
       <details className="model-details"><summary>Weekly adjustments used in this result</summary>{result.player_adjustments.filter(p => p.workload_notes.length > 0 || p.is_rookie).map(p => <div key={p.player.player_id}><strong>{p.player.name}</strong><RookieInfo entry={p} /><AvailabilityInfo entry={p} /></div>)}{result.weekly?.warnings.map(w => <p key={w}>{w}</p>)}</details>
       <details className="alternatives"><summary>Compare other lineups</summary>{result.alternatives.map((lineup, i) => <LineupCard key={i} lineup={lineup} title={`Alternative ${i + 1}`} />)}</details>

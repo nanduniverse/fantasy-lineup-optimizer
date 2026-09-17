@@ -13,6 +13,9 @@ test('production shell, player catalog, matchup and news survive an offline relo
   } }));
   await page.goto(url!);
   await expect(page.getByText('Saved fantasy update')).toBeVisible();
+  await page.getByRole('checkbox', { name: 'Save on this device for offline use' }).check();
+  await expect(page.getByRole('checkbox', { name: 'Save on this device for offline use' })).toBeChecked();
+  await expect(page.getByText('Saved fantasy update')).toBeVisible();
   await page.evaluate(async () => { await navigator.serviceWorker.ready; });
   await page.waitForFunction(() => !!navigator.serviceWorker.controller);
   const add = page.getByRole('button', { name: /Add .* to Your team/ }).first();

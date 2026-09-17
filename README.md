@@ -180,7 +180,7 @@ After deploying, check the homepage, `/api/health`, player loading, and a recomm
 
 Build the frontend with `cd frontend && npm run build`, then serve it with
 `npm run preview -- --host 127.0.0.1`. Open the displayed localhost URL once
-while online and let the player catalog and news finish loading. The production
+while online, enable **Save on this device for offline use**, and let the player catalog and news finish loading. The production
 build installs a service worker; Vite development mode does not support offline
 page reloads. HTTPS deployments also support this cache.
 
@@ -227,7 +227,7 @@ host. The repository includes a Dockerfile and an optional Render Blueprint:
 1. Push this repository to your Git host and connect it to Render.
 2. Create a Blueprint using `render.yaml`.
 3. Review and accept the paid **standard** instance and 1 GB persistent disk.
-4. Open the resulting HTTPS URL once online to initialize browser offline storage.
+4. Open the resulting HTTPS URL online and enable **Save on this device for offline use** if desired.
 
 This configuration serves the frontend and API from one address. The background
 collectors run on the host, and `/var/data` preserves public news/report snapshots.
@@ -269,3 +269,17 @@ Inspect the configured schedule with `npx vercel crons list` and trigger it with
 `npx vercel crons run /api/cron/refresh`.
 
 [Vercel cron scheduling limits](https://vercel.com/docs/cron-jobs/usage-and-pricing)
+
+
+## Privacy, policies and accessibility
+
+This is a free, personally operated community project. `/privacy`, `/terms` and
+`/cookies` describe the implemented data flows and link to `nand4ara@gmail.com`.
+Offline saving is optional and off by default; disabling it clears the app's saved
+device data and service worker. No analytics or advertising is added. External
+fonts and player photos were removed to avoid automatic third-party browser requests.
+Source data licenses, model limitations and lack of provider affiliation are disclosed.
+
+See [the audit and unresolved risks](docs/PRIVACY_AND_ACCESSIBILITY_AUDIT.md),
+especially ESPN's restrictions on automated extraction and private-session credential
+handling. Policy pages do not establish data-provider permission or legal compliance.

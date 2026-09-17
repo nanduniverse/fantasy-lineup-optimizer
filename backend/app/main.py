@@ -62,6 +62,15 @@ app.include_router(recommendations_router, prefix="/api")
 frontend_dist = Path(os.environ['FRONTEND_DIST']) if os.getenv('FRONTEND_DIST') else None
 
 
+@app.middleware("http")
+async def sensitive_response_headers(request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith('/api/leagues/'):
+        response.headers['Cache-Control'] = 'no-store'
+        response.headers['Pragma'] = 'no-cache'
+    return response
+
+
 @app.get("/")
 def root():
     if frontend_dist:
@@ -70,5 +79,7 @@ def root():
 
 
 if frontend_dist:
+    for policy_path in ('/privacy', '/terms', '/cookies'):
+        app.add_api_route(policy_path, root, methods=['GET'], include_in_schema=False)
     # API routes take precedence. Serve only the built frontend directory.
     app.mount('/', StaticFiles(directory=frontend_dist, html=True), name='frontend')
