@@ -1,0 +1,16 @@
+# Optional paid always-on deployment. Review the plan in Render before creating it.
+services:
+  - type: web
+    name: fantasy-lineup-optimizer
+    runtime: docker
+    plan: standard
+    healthCheckPath: /api/health
+    disk:
+      name: fantasy-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: NEWS_CACHE_DIR
+        value: /var/data

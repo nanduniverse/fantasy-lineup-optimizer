@@ -1,3 +1,4 @@
+import { readSaved, save } from "../lib/storage";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { loadNflPlayers, recommendNflLineup } from "../lib/api";
 import type { NflCatalog, NflPlayer, NflRecommendationResponse, Position, RosterRules, ScoringFormat, LeagueImport } from "../types";
@@ -33,12 +34,12 @@ function RookieInfo({ entry }: { entry: NflPlayer }) {
 
 const STATUS_LABELS: Record<string, string> = {
   free_agent: "Unsigned free agent", practice_squad: "Practice squad", out: "Out", suspended: "Suspended", ir: "Injured reserve", exempt: "Exempt list",
-  inactive: "Inactive", bye: "Bye week", questionable: "Questionable", doubtful: "Doubtful", unknown: "Status unverified",
+  inactive: "Inactive", bye: "Bye week", questionable: "Questionable", doubtful: "Doubtful", unknown: "No current report", available: "Available",
 };
-function AvailabilityInfo({ entry }: { entry: NflPlayer }) {
+function AvailabilityInfo({ entry, saved = false }: { entry: NflPlayer; saved?: boolean }) {
   const gain = entry.eligible && entry.projected_points !== null ? entry.projected_points - (entry.baseline_projected_points ?? entry.projected_points) : 0;
   return <>
-    {entry.availability !== "available" && <em className={`availability ${entry.eligible ? "uncertain" : "unavailable"}`}>{STATUS_LABELS[entry.availability] ?? entry.availability}</em>}
+    <em className={`availability status-${entry.availability}`} title={entry.availability_updated_at ? `ESPN report updated ${new Date(entry.availability_updated_at).toLocaleString()}` : 'No current ESPN report available'}>Status: {STATUS_LABELS[entry.availability] ?? entry.availability}{saved && entry.availability !== "unknown" ? " · saved" : ""}</em>
     {entry.workload_notes.length > 0 && <details className="workload-details"><summary>{gain > 0.05 ? `↑ +${gain.toFixed(1)} projected points` : "Weekly availability notes"}</summary>
       {gain > 0.05 && <p>Baseline {(entry.baseline_projected_points ?? 0).toFixed(1)} → {entry.projected_points?.toFixed(1) ?? "—"} points. Estimated opportunities: {entry.projected_carries.toFixed(1)} carries, {entry.projected_targets.toFixed(1)} targets{entry.player.position === "QB" ? `, ${entry.projected_passing_attempts.toFixed(1)} pass attempts` : ""}.</p>}
       {entry.workload_notes.map(note => <p key={note}>{note}</p>)}
@@ -69,7 +70,7 @@ function TeamPanel({ title, subtitle, side, entries, otherIds, catalog, loading,
     {stackTeams.length > 0 && <div className="stack-note">⌁ {stackTeams.join(" + ")} stack available <span>Shared passing upside</span></div>}
     <div className="roster-list">
       {entries.map(entry => <article className="roster-player" key={entry.player.player_id}>
-        <Avatar entry={entry} /><div className="player-name"><strong>{entry.player.name}</strong><span>{entry.player.position} <b>·</b> {entry.team}{entry.depth_rank ? ` · Depth ${entry.depth_rank}` : ""}</span><RookieInfo entry={entry} /><AvailabilityInfo entry={entry} /></div>
+        <Avatar entry={entry} /><div className="player-name"><strong>{entry.player.name}</strong><span>{entry.player.position} <b>·</b> {entry.team}{entry.depth_rank ? ` · Depth ${entry.depth_rank}` : ""}</span><RookieInfo entry={entry} /><AvailabilityInfo entry={entry} saved={!catalog?.weekly?.verified} /></div>
         <div className="projection">{entry.projected_points?.toFixed(1) ?? "—"}<small>proj. pts</small></div>
         <button className="remove" disabled={loading} onClick={() => onRemove(entry.player.player_id)} aria-label={`Remove ${entry.player.name} from ${title}`}>×</button>
       </article>)}
@@ -85,7 +86,7 @@ function TeamPanel({ title, subtitle, side, entries, otherIds, catalog, loading,
       {loading && !catalog && <div className="loading-state" role="status">Loading NFL players…</div>}
       {!loading && catalog && candidates.length === 0 && <p className="muted">No available players match this search.</p>}
       <div className="candidate-list">{candidates.slice(0, limit).map(entry => <article className="candidate" key={entry.player.player_id}>
-        <Avatar entry={entry} /><div className="player-name"><strong>{entry.player.name}</strong><span>{entry.player.position} <b>·</b> {entry.team}{entry.depth_rank ? ` · Depth ${entry.depth_rank}` : ""}</span><RookieInfo entry={entry} /><AvailabilityInfo entry={entry} /></div><div className="projection">{entry.projected_points?.toFixed(1) ?? "—"}<small>proj. pts</small></div>
+        <Avatar entry={entry} /><div className="player-name"><strong>{entry.player.name}</strong><span>{entry.player.position} <b>·</b> {entry.team}{entry.depth_rank ? ` · Depth ${entry.depth_rank}` : ""}</span><RookieInfo entry={entry} /><AvailabilityInfo entry={entry} saved={!catalog?.weekly?.verified} /></div><div className="projection">{entry.projected_points?.toFixed(1) ?? "—"}<small>proj. pts</small></div>
         <button className="add-player" aria-label={`Add ${entry.player.name} to ${title}`} disabled={loading || entries.length >= max || (side === "opponent" && !entry.eligible)} onClick={() => onAdd(entry.player.player_id)}>+</button>
       </article>)}</div>
       {candidates.length > limit && <button className="show-more" onClick={() => setLimit(n => n + 12)}>Show more players ↓</button>}
@@ -94,19 +95,30 @@ function TeamPanel({ title, subtitle, side, entries, otherIds, catalog, loading,
 }
 
 export function NflBuilder() {
-  const [scoring, setScoring] = useState<ScoringFormat>("half_ppr");
-  const [week, setWeek] = useState(1);
+  const [saved] = useState(() => readSaved<{ scoring: ScoringFormat; week: number; yourIds: string[]; opponentIds: string[]; rules: RosterRules }>('matchup'));
+  const [scoring, setScoring] = useState<ScoringFormat>(saved?.scoring ?? "half_ppr");
+  const [week, setWeek] = useState(saved?.week ?? 1);
   const [catalog, setCatalog] = useState<NflCatalog | null>(null);
-  const [yourIds, setYourIds] = useState<string[]>([]);
-  const [opponentIds, setOpponentIds] = useState<string[]>([]);
-  const [rules, setRules] = useState<RosterRules>(DEFAULT_RULES);
+  const [yourIds, setYourIds] = useState<string[]>(saved?.yourIds ?? []);
+  const [opponentIds, setOpponentIds] = useState<string[]>(saved?.opponentIds ?? []);
+  const [rules, setRules] = useState<RosterRules>(saved?.rules ?? DEFAULT_RULES);
   const [loading, setLoading] = useState(true);
   const [optimizing, setOptimizing] = useState(false);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
   const [result, setResult] = useState<NflRecommendationResponse | null>(null);
+  const selectCurrentWeek = useRef(!saved?.yourIds?.length && !saved?.opponentIds?.length);
   const resultsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    save('matchup', { scoring, week, yourIds, opponentIds, rules });
+  }, [scoring, week, yourIds, opponentIds, rules]);
+  useEffect(() => {
+    const refresh = () => setRetry(n => n + 1);
+    window.addEventListener('online', refresh);
+    window.addEventListener('offline', refresh);
+    return () => { window.removeEventListener('online', refresh); window.removeEventListener('offline', refresh); };
+  }, []);
   const starterCount = Object.values(rules).reduce((sum, value) => sum + value, 0);
   const busy = loading || optimizing || importing;
   const applyImport = useCallback((data: LeagueImport) => {
@@ -123,6 +135,13 @@ export function NflBuilder() {
     setLoading(true); setError(""); setResult(null); setCatalog(null);
     loadNflPlayers({ season: 2026, target_week: week, scoring_format: scoring }, controller.signal).then(data => {
       if (controller.signal.aborted) return;
+      if (selectCurrentWeek.current) {
+        selectCurrentWeek.current = false;
+        if (data.weekly?.current_week && data.weekly.current_week !== week) {
+          setWeek(data.weekly.current_week);
+          return;
+        }
+      }
       setCatalog(data);
       const ids = new Set(data.players.map(p => p.player.player_id));
       setYourIds(old => old.filter(id => ids.has(id)));
@@ -153,7 +172,7 @@ export function NflBuilder() {
     if (entries.filter(e => ["RB", "WR", "TE"].includes(e.player.position)).length < rules.rb + rules.wr + rules.te + rules.flex) return "Add more RB, WR, or TE players to fill FLEX.";
     return null;
   }
-  const issue = catalog && !catalog.weekly?.verified ? "Weekly availability isn’t verified for this week. Refresh reports or choose the current NFL week."
+  const issue = catalog && !catalog.weekly?.verified ? "Current ESPN reports are needed to optimize. Refresh reports or choose the current NFL week."
     : opponents.some(p => !p.eligible) ? "Replace the unavailable opponent starters before optimizing."
     : starterCount === 0 ? "Choose at least one starter slot." : legality(yours.filter(p => p.eligible), false) ?? legality(opponents, true);
 
@@ -177,7 +196,7 @@ export function NflBuilder() {
     <details className="lineup-settings"><summary>Lineup settings <span>{Object.entries(rules).filter(([, count]) => count).map(([slot, count]) => `${count} ${slot.toUpperCase()}`).join(" · ")}</span></summary><div className="slot-settings">{(Object.keys(rules) as (keyof RosterRules)[]).map(slot => <label key={slot}>{slot.toUpperCase()}<input aria-label={`${slot.toUpperCase()} slots`} type="number" min={0} max={MAX_RULES[slot]} value={rules[slot]} disabled={busy} onChange={e => { setRules({ ...rules, [slot]: Math.max(0, Math.min(MAX_RULES[slot], Math.trunc(Number(e.target.value)))) }); setResult(null); }} /></label>)}</div></details>
     {error && <div className="error" role="alert">{error} {!catalog && <button onClick={() => setRetry(n => n + 1)}>Try again</button>}</div>}
     <div className="weekly-toolbar" aria-live="polite">
-      <span>{catalog?.weekly?.verified ? `Weekly reports checked ${new Date(catalog.weekly.fetched_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · refreshes every 5 minutes` : loading ? "Checking availability and depth charts…" : "Weekly availability not verified"}</span>
+      <span>{catalog?.weekly?.verified ? `Weekly reports checked ${new Date(catalog.weekly.fetched_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · refreshes every 5 minutes` : loading ? "Checking availability and depth charts…" : "Current ESPN reports unavailable for this week"}</span>
       <button disabled={busy} onClick={() => setRetry(n => n + 1)}>Refresh reports ↻</button>
     </div>
     {catalog?.weekly && !catalog.weekly.verified && <div className="coverage-warning" role="status">{catalog.weekly.warnings.join(" ")}

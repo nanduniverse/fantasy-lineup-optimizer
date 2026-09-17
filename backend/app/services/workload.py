@@ -25,7 +25,7 @@ def weighted(values: list[float]) -> float:
 def apply_weekly(catalog: NflCatalog, roster: CurrentRoster, histories: list[SeasonData],
                  snapshot: WeeklySnapshot) -> NflCatalog:
     if (snapshot.season, snapshot.week) != (catalog.season, catalog.target_week):
-        snapshot = replace(snapshot, verified=False, warnings=snapshot.warnings + ('Weekly report does not match this matchup.',))
+        snapshot = replace(snapshot, verified=False, saved=False, reports={}, depths={}, playing_teams=frozenset(), warnings=snapshot.warnings + ('Weekly report does not match this matchup.',))
     # Work on a response copy; cached sources and the baseline catalog stay immutable.
     result = catalog.model_copy(deep=True)
     result.weekly = WeeklyCoverage(verified=snapshot.verified, current_week=snapshot.current_week,
@@ -57,7 +57,7 @@ def apply_weekly(catalog: NflCatalog, roster: CurrentRoster, histories: list[Sea
             setattr(entry, 'projected_' + key, round(baseline[pid][key], 2))
         depth = next((d for d in snapshot.depths.get(team_code(entry.team), ()) if d.espn_id == veteran.espn_id), None)
         report = snapshot.reports.get(veteran.espn_id)
-        if snapshot.verified:
+        if snapshot.verified or snapshot.saved:
             if entry.team == 'FA' or veteran.roster_status in {'CUT', 'FA'}:
                 entry.availability = 'free_agent'
             elif veteran.roster_status == 'DEV':

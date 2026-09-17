@@ -179,3 +179,15 @@ def test_quarterback_replacement_receives_attempts_and_extra_uncertainty():
     assert backup.added_passing_attempts == 30
     assert backup.player.workload_std_dev > 0
     assert backup.projected_points > backup.baseline_projected_points
+
+
+def test_saved_statuses_display_but_cannot_drive_new_recommendations(monkeypatch):
+    roster, history, snapshot, baseline = scenario()
+    adjusted = apply_weekly(baseline, roster, [history], replace(snapshot, verified=False, saved=True))
+    assert entry(adjusted, 'starter').availability == 'out'
+    assert entry(adjusted, 'backup').added_carries == 0
+    assert not adjusted.weekly.verified
+    monkeypatch.setattr(nfl, 'current_catalog_for', lambda _: adjusted)
+    assert TestClient(app).post('/api/nfl/current/recommend-lineup', json=payload()).status_code == 503
+    mismatched = apply_weekly(baseline, roster, [history], replace(snapshot, week=2, verified=False, saved=True))
+    assert entry(mismatched, 'starter').availability == 'unknown'

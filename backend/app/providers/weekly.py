@@ -6,7 +6,7 @@ never reuse a live report as if it described another requested week.
 import json
 import re
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone, timedelta
 from threading import Lock
 from time import monotonic
@@ -15,6 +15,7 @@ from urllib.parse import urlparse
 import httpx
 
 from app.providers.nflverse import ProviderError
+from app.providers.weekly_cache import data_dir, load_snapshot, save_snapshot
 
 BASE = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl'
 STATUSES = {
@@ -57,6 +58,7 @@ class WeeklySnapshot:
     playing_teams: frozenset[str] = frozenset()
     warnings: tuple[str, ...] = ()
     source_urls: tuple[str, ...] = ()
+    saved: bool = False
 
 
 def athlete_id(athlete: dict) -> str | None:
@@ -143,8 +145,9 @@ def parse_depth(payload: dict, season: int, now: datetime) -> tuple[DepthPlayer,
 
 
 class WeeklyProvider:
-    def __init__(self, transport: httpx.BaseTransport | None = None):
+    def __init__(self, transport: httpx.BaseTransport | None = None, cache_directory=None):
         self.transport = transport
+        self.cache_directory = cache_directory if cache_directory is not None else (data_dir() if transport is None else None)
         self._lock = Lock()
         self._cached: tuple[float, WeeklySnapshot] | None = None
 
@@ -218,6 +221,17 @@ class WeeklyProvider:
             except (ProviderError, KeyError, IndexError, TypeError, ValueError, AttributeError) as exc:
                 result = WeeklySnapshot(season, week, now, current_week, warnings=(str(exc),),
                                         source_urls=tuple(BASE + path for path in paths))
+            if self.cache_directory is not None:
+                if result.verified:
+                    try:
+                        save_snapshot(result, self.cache_directory)
+                    except OSError:
+                        import logging
+                        logging.getLogger(__name__).exception('Could not persist ESPN reports')
+                else:
+                    saved = load_snapshot(season, week, self.cache_directory)
+                    if saved is not None:
+                        result = replace(saved, current_week=current_week, warnings=result.warnings + saved.warnings)
             self._cached = (monotonic(), result)
             return result
 

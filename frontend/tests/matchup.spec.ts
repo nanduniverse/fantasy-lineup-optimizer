@@ -58,7 +58,7 @@ test('weekly availability, workload explanation, and wrong-week guard', async ({
   await mine.getByRole('textbox').fill('Jacobs');
   await theirs.getByRole('textbox').fill('Jacobs');
   await expect(theirs.getByRole('button', { name: 'Add Josh Jacobs to The opponent' })).toBeDisabled();
-  await expect(mine.getByText('Exempt list', { exact: true })).toBeVisible();
+  await expect(mine.getByText('Status: Exempt list', { exact: true })).toBeVisible();
   await mine.getByRole('button', { name: 'Add Josh Jacobs to Your team' }).click();
   await mine.getByRole('textbox').fill('Lloyd');
   await mine.locator('summary').filter({ hasText: /projected points/ }).click();

@@ -78,3 +78,50 @@ def test_network_failure_is_explicit_unknown_not_available():
     snapshot = provider.snapshot(2026, 1)
     assert not snapshot.verified
     assert snapshot.warnings
+
+
+@pytest.mark.parametrize('status,expected', [('Active', 'available'), ('Questionable', 'questionable'), ('Doubtful', 'doubtful'), ('Out', 'out')])
+def test_espn_status_labels(status, expected):
+    payload = report_payload()
+    payload['injuries'][0]['injuries'][0]['status'] = status
+    assert parse_reports(payload, 2026, NOW)['123'].status == expected
+
+
+def test_saved_reports_survive_restart_without_becoming_verified(tmp_path):
+    from app.providers.weekly import WeeklySnapshot, Report, DepthPlayer
+    from app.providers.weekly_cache import save_snapshot
+    snapshot = WeeklySnapshot(2026, 1, NOW, current_week=1, verified=True,
+                              reports={'123': Report('questionable', NOW)},
+                              depths={'CIN': (DepthPlayer('123', 'RB', 1),)},
+                              playing_teams=frozenset({'CIN'}))
+    save_snapshot(snapshot, tmp_path)
+    provider = WeeklyProvider(httpx.MockTransport(lambda _: httpx.Response(503)), cache_directory=tmp_path)
+    cached = provider.snapshot(2026, 1)
+    assert not cached.verified
+    assert cached.reports['123'].status == 'questionable'
+    assert cached.fetched_at == NOW
+    assert any('Saved ESPN reports' in warning for warning in cached.warnings)
+    assert not provider.snapshot(2026, 2).reports
+
+
+def test_corrupt_report_cache_does_not_break_provider(tmp_path):
+    (tmp_path / 'weekly-2026-1.json').write_text('{broken')
+    provider = WeeklyProvider(httpx.MockTransport(lambda _: httpx.Response(503)), cache_directory=tmp_path)
+    snapshot = provider.snapshot(2026, 1)
+    assert not snapshot.verified
+    assert not snapshot.reports
+
+
+def test_report_snapshot_can_load_from_cloud_without_local_disk(tmp_path, monkeypatch):
+    from app.providers.weekly import WeeklySnapshot, Report
+    from app.providers.weekly_cache import save_snapshot, load_snapshot
+    from app.services import cloud_storage
+    blobs = {}
+    monkeypatch.setattr(cloud_storage, 'enabled', lambda: True)
+    monkeypatch.setattr(cloud_storage, 'write', lambda name, content: blobs.update({name: content}))
+    monkeypatch.setattr(cloud_storage, 'read', lambda name: blobs.get(name))
+    snapshot = WeeklySnapshot(2026, 2, NOW, verified=True, reports={'123': Report('out', NOW)})
+    save_snapshot(snapshot, tmp_path / 'first-process')
+    loaded = load_snapshot(2026, 2, tmp_path / 'new-process')
+    assert loaded.reports['123'].status == 'out'
+    assert loaded.saved and not loaded.verified

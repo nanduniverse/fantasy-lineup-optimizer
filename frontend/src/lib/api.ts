@@ -1,3 +1,4 @@
+import { readSaved, save } from "./storage";
 import type { NflCatalog, NflContext, NflRecommendationRequest, NflRecommendationResponse, RecommendationResponse } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.PROD ? "/api" : "http://localhost:8000/api");
@@ -32,9 +33,20 @@ export function recommendLineup(payload: unknown): Promise<RecommendationRespons
   });
 }
 
-export function loadNflPlayers(context: NflContext, signal?: AbortSignal): Promise<NflCatalog> {
+export async function loadNflPlayers(context: NflContext, signal?: AbortSignal): Promise<NflCatalog> {
   const query = new URLSearchParams({ season: String(context.season), target_week: String(context.target_week), scoring_format: context.scoring_format });
-  return request(`/nfl/current/players?${query}`, { signal });
+  const key = `catalog:${query}`;
+  try {
+    const data = await request<NflCatalog>(`/nfl/current/players?${query}`, { signal });
+    save(key, data);
+    return data;
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    const cached = readSaved<NflCatalog>(key);
+    if (!cached?.players || !cached.weekly) throw error;
+    return { ...cached, weekly: { ...cached.weekly, verified: false,
+      warnings: [`Offline / saved data from ${new Date(cached.weekly.fetched_at).toLocaleString()}. Reconnect to verify availability and optimize.`, ...cached.weekly.warnings] } };
+  }
 }
 
 export function recommendNflLineup(payload: NflRecommendationRequest): Promise<NflRecommendationResponse> {
@@ -47,4 +59,17 @@ export function importEspnLeague(payload: import('../types').LeagueRequest, sign
   return request('/leagues/espn/import', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal,
   });
+}
+
+export async function loadNews(signal?: AbortSignal): Promise<import('../types').NewsFeed> {
+  try {
+    const news = await request<import('../types').NewsFeed>('/news', { signal });
+    save('news', news);
+    return news;
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    const cached = readSaved<import('../types').NewsFeed>('news');
+    if (!cached?.articles) throw error;
+    return { ...cached, stale: true, warnings: [...cached.warnings, 'Offline / saved headlines. Reconnect to check for updates.'] };
+  }
 }

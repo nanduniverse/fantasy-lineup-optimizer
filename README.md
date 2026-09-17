@@ -175,3 +175,97 @@ npx vercel --prod
 ```
 
 After deploying, check the homepage, `/api/health`, player loading, and a recommendation. League authentication values must never be added to Vercel environment variables or committed to Git; they remain request-scoped.
+
+## Offline use and daily news
+
+Build the frontend with `cd frontend && npm run build`, then serve it with
+`npm run preview -- --host 127.0.0.1`. Open the displayed localhost URL once
+while online and let the player catalog and news finish loading. The production
+build installs a service worker; Vite development mode does not support offline
+page reloads. HTTPS deployments also support this cache.
+
+Subsequent offline visits can open the app, browse previously loaded player
+catalogs and headlines, and edit saved matchup selections. Each visited
+week/scoring combination is cached separately. Unvisited combinations need a
+connection first. Cached availability is explicitly unverified: new optimization
+and ESPN imports require the backend and live reports. Full articles and uncached
+player photos require internet access. Browser storage must be enabled; clearing
+site data removes offline content. ESPN session cookies are never persisted.
+
+`GET /api/news` collects public RotoWire NFL and ESPN NFL RSS headlines, publication
+times, and links. It deduplicates and keeps the newest 100 headlines (the panel
+shows 30); it does not copy full articles or infer injuries from news. The local
+backend checks hourly and refreshes once per UTC calendar day, including on
+startup after downtime. Failed downloads retain the last good data and retry no
+more than hourly. News is stored atomically in `backend/.data/news.json`; set
+`NEWS_CACHE_DIR` to use another persistent directory.
+
+Keep the backend running on an awake, connected computer for automatic daily
+collection. Alternatively, run `cd backend && .venv313/bin/python -m app.services.news` from a daily OS scheduler (use an absolute working directory
+in the scheduler). No program can fetch fresh news without internet access.
+Vercel deployments use the daily cloud schedule and private Blob storage described below; local deployments use the background collector.
+
+## Player status and always-on hosting
+
+Player cards show **Status: Available** in green, **Questionable** in yellow,
+**Doubtful** in orange, and **Out** in red. Injured reserve, suspension and inactive
+states retain their specific red labels; byes, unsigned players and missing reports
+are gray. An unknown report is never treated as confirmed availability. These are
+ESPN's structured injury/depth reports joined by athlete ID, not guesses from news.
+An empty matchup opens ESPN's current regular-season week. Existing selected
+rosters keep their saved week; use **Go to week …** to switch to the live week.
+
+The backend now refreshes ESPN reports every five minutes even without an open
+browser, alongside the daily news collector. Last-good weekly reports are saved
+in `NEWS_CACHE_DIR` and survive restarts. When ESPN is unreachable, saved reports
+are labeled **saved**, with their original timestamp, and optimization remains
+paused. Current reports never become predictions for a different week.
+
+To keep collecting while your laptop is asleep or off, deploy on an always-on
+host. The repository includes a Dockerfile and an optional Render Blueprint:
+
+1. Push this repository to your Git host and connect it to Render.
+2. Create a Blueprint using `render.yaml`.
+3. Review and accept the paid **standard** instance and 1 GB persistent disk.
+4. Open the resulting HTTPS URL once online to initialize browser offline storage.
+
+This configuration serves the frontend and API from one address. The background
+collectors run on the host, and `/var/data` preserves public news/report snapshots.
+No ESPN account cookies are stored. There is no hosting account provisioned or
+payment initiated by adding these files. Free services that sleep cannot run this continuous collector reliably. Vercel uses the separate daily schedule below.
+
+The container can also run on an existing always-on machine with Docker:
+
+```bash
+docker build -t fantasy-lineup .
+docker run -d --name fantasy-lineup --restart unless-stopped -p 8000:8000 \
+  -v fantasy-data:/var/data fantasy-lineup
+```
+
+Open `http://localhost:8000` on that machine. Remote browser offline support needs
+HTTPS. Docker running on your laptop still stops when the laptop is off.
+
+Hosting reference: [Render persistent disks](https://render.com/docs/disks) and
+[Blueprint configuration](https://render.com/docs/blueprint-spec).
+
+
+## Vercel daily cloud updates
+
+The linked Vercel project uses a daily cron at `0 10 * * *` (10:00 UTC;
+Hobby execution can occur within that hour). It calls `/api/cron/refresh` to fetch
+news and current ESPN reports even when your laptop is off. The endpoint requires
+Vercel's `CRON_SECRET` bearer token. Private Blob storage, connected through
+`BLOB_READ_WRITE_TOKEN`, preserves the public snapshots across deployments and
+cold starts. Credentials stay in Vercel environment variables and ignored local
+environment files; nothing from league imports is stored in Blob.
+
+Persistent background loops are disabled on Vercel. While the app is open,
+player requests still check ESPN using the five-minute provider cache. The cloud
+cron is daily, not every five minutes. Browser offline mode displays saved data;
+fresh updates arrive after reconnection. Provider failures retain previous data
+and make the cron return an error rather than claiming a successful refresh.
+
+Inspect the configured schedule with `npx vercel crons list` and trigger it with
+`npx vercel crons run /api/cron/refresh`.
+
+[Vercel cron scheduling limits](https://vercel.com/docs/cron-jobs/usage-and-pricing)

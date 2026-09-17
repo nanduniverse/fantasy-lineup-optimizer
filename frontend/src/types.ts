@@ -99,3 +99,10 @@ export type LeagueImport = {
   rules: RosterRules; scoring_format: ScoringFormat; warnings: string[];
 };
 export type LeagueRequest = { league_id: string; week: number; team_id?: number; espn_s2?: string; swid?: string };
+
+export type NewsFeed = {
+  articles: { title: string; url: string; source: string; published_at: string }[];
+  fetched_at: string | null;
+  stale: boolean;
+  warnings: string[];
+};

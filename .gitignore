@@ -26,3 +26,7 @@ playwright-report/
 
 # Vercel local project metadata
 .vercel/
+
+# Local news snapshots
+backend/.data/
+.env*

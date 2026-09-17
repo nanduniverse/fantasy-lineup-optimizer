@@ -18,3 +18,17 @@
 
 /* Keep error screens plain, without the app’s visual theme. */
 .standard-error,.standard-error *{all:revert}.standard-error{display:block;box-sizing:border-box;min-height:100vh;padding:8px;background:white;color:black;font-family:serif}
+
+.news-panel { margin: 2rem 0; padding: 1.5rem; border: 1px solid #d7ded6; border-radius: 16px; }
+.news-panel ul { list-style: none; padding: 0; }
+.news-panel li { padding: 1rem 0; border-bottom: 1px solid #d7ded6; }
+.news-panel a { color: inherit; font-weight: 600; overflow-wrap: anywhere; }
+.news-panel small { display: block; margin-top: .4rem; opacity: .7; }
+
+.availability.status-available { background: #dcfce7; color: #166534; }
+.availability.status-questionable { background: #fef08a; color: #713f12; }
+.availability.status-doubtful { background: #fed7aa; color: #9a3412; }
+.availability.status-out, .availability.status-ir, .availability.status-suspended,
+.availability.status-exempt, .availability.status-inactive { background: #fee2e2; color: #991b1b; }
+.availability.status-unknown, .availability.status-bye, .availability.status-free_agent,
+.availability.status-practice_squad { background: #e5e7eb; color: #374151; }
